@@ -31,3 +31,21 @@ export interface DashboardStats {
   categorySummary: CategorySummary[];
   recentTransactions: Transaction[];
 }
+
+export interface Budget {
+  _id: string;
+  category: string;
+  monthlyLimit: number;
+  month: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BudgetComparison {
+  category: string;
+  budget: number;
+  actual: number;
+  difference: number;
+  percentageUsed: number;
+  status: 'over' | 'under' | 'exact';
+}
