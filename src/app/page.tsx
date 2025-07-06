@@ -5,8 +5,11 @@ import { Transaction } from '@/types/global';
 import TransactionForm from '@/components/TransactionForm';
 import TransactionList from '@/components/TransactionList';
 import MonthlyChart from '@/components/MonthlyChart';
+import CategoryPieChart from '@/components/CategoryPieChart';
+import Dashboard from '@/components/Dashboard';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { toast, Toaster } from 'sonner';
+import { toast, Toaster } from 'sonner'; 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -48,6 +51,7 @@ export default function Home() {
 
       const newTransaction = await response.json();
       setTransactions(prev => [newTransaction, ...prev]);
+
       toast.success("Transaction added successfully!");
     } catch (error) {
       console.error('Error adding transaction:', error);
@@ -75,6 +79,7 @@ export default function Home() {
         prev.map(t => t._id === editingTransaction._id ? updatedTransaction : t)
       );
       setEditingTransaction(null);
+
       toast.success("Transaction updated successfully!");
     } catch (error) {
       console.error('Error updating transaction:', error);
@@ -96,6 +101,7 @@ export default function Home() {
       }
 
       setTransactions(prev => prev.filter(t => t._id !== id));
+
       toast.success("Transaction deleted successfully!");
     } catch (error) {
       console.error('Error deleting transaction:', error);
@@ -114,34 +120,51 @@ export default function Home() {
               Personal Finance Tracker
             </h1>
             <p className="text-gray-600">
-              Track your expenses and visualize your spending patterns
+              Track your expenses, categorize spending, and visualize your financial patterns
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div>
-              <TransactionForm
-                onSubmit={handleSubmit}
-                editingTransaction={editingTransaction}
-                onCancel={() => setEditingTransaction(null)}
-              />
-            </div>
-            <div>
-              <MonthlyChart transactions={transactions} />
-            </div>
-          </div>
+          <Tabs defaultValue="dashboard" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="add">Add Transaction</TabsTrigger>
+              <TabsTrigger value="transactions">Transactions</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            </TabsList>
 
-          <div className="max-w-4xl mx-auto">
-            <TransactionList
-              transactions={transactions}
-              onEdit={setEditingTransaction}
-              onDelete={handleDeleteTransaction}
-              isLoading={isLoading}
-            />
-          </div>
+            <TabsContent value="dashboard" className="space-y-6">
+              <Dashboard transactions={transactions} />
+            </TabsContent>
+
+            <TabsContent value="add" className="space-y-6">
+              <div className="max-w-md mx-auto">
+                <TransactionForm
+                  onSubmit={handleSubmit}
+                  editingTransaction={editingTransaction}
+                  onCancel={() => setEditingTransaction(null)}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="transactions" className="space-y-6">
+              <TransactionList
+                transactions={transactions}
+                onEdit={setEditingTransaction}
+                onDelete={handleDeleteTransaction}
+                isLoading={isLoading}
+              />
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <MonthlyChart transactions={transactions} />
+                <CategoryPieChart transactions={transactions} />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
-      <Toaster richColors position="top-center" />
+      <Toaster richColors /> 
     </ErrorBoundary>
   );
 }

@@ -3,6 +3,7 @@
 import { Transaction } from '@/types/global';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2 } from 'lucide-react';
 
 interface TransactionListProps {
@@ -28,6 +29,22 @@ export default function TransactionList({ transactions, onEdit, onDelete, isLoad
     }).format(amount);
   };
 
+  const getCategoryColor = (category: string) => {
+    const colors: Record<string, string> = {
+      'Food & Dining': 'bg-orange-100 text-orange-800',
+      'Transportation': 'bg-blue-100 text-blue-800',
+      'Shopping': 'bg-purple-100 text-purple-800',
+      'Entertainment': 'bg-pink-100 text-pink-800',
+      'Bills & Utilities': 'bg-red-100 text-red-800',
+      'Healthcare': 'bg-green-100 text-green-800',
+      'Education': 'bg-yellow-100 text-yellow-800',
+      'Travel': 'bg-indigo-100 text-indigo-800',
+      'Personal Care': 'bg-teal-100 text-teal-800',
+      'Other': 'bg-gray-100 text-gray-800',
+    };
+    return colors[category] || 'bg-gray-100 text-gray-800';
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -46,7 +63,7 @@ export default function TransactionList({ transactions, onEdit, onDelete, isLoad
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Transactions ({transactions.length})</CardTitle>
+        <CardTitle>Recent Transactions ({transactions.length})</CardTitle>
       </CardHeader>
       <CardContent>
         {transactions.length === 0 ? (
@@ -54,22 +71,27 @@ export default function TransactionList({ transactions, onEdit, onDelete, isLoad
             No transactions yet. Add your first transaction above!
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {transactions.map((transaction) => (
               <div
                 key={transaction._id}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <div className="flex-1">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 mb-2">
                     <h3 className="font-medium text-gray-900">{transaction.description}</h3>
+                    <Badge className={getCategoryColor(transaction.category)}>
+                      {transaction.category}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-500">
+                      {formatDate(transaction.date)}
+                    </p>
                     <span className="font-semibold text-lg text-red-600">
                       -{formatAmount(transaction.amount)}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {formatDate(transaction.date)}
-                  </p>
                 </div>
                 <div className="flex gap-2 ml-4">
                   <Button

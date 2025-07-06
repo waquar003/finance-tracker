@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { CATEGORIES } from '@/types/constants';
 
 const TransactionSchema = new mongoose.Schema({
   amount: {
@@ -13,6 +14,12 @@ const TransactionSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
+  },
+  category: {
+    type: String,
+    required: true,
+    enum: CATEGORIES,
+    default: 'Other',
   },
 }, {
   timestamps: true,

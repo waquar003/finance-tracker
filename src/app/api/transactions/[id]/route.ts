@@ -10,9 +10,9 @@ export async function PUT(
     await connectDB();
     const body = await request.json();
     
-    if (!body.amount || !body.date || !body.description) {
+    if (!body.amount || !body.date || !body.description || !body.category) {
       return NextResponse.json(
-        { error: 'Amount, date, and description are required' },
+        { error: 'Amount, date, description, and category are required' },
         { status: 400 }
       );
     }

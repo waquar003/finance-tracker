@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Transaction } from '@/types/global';
+import { CATEGORIES } from '@/types/constants';
 
 interface TransactionFormProps {
   onSubmit: (transaction: Omit<Transaction, '_id' | 'createdAt' | 'updatedAt'>) => void;
@@ -18,6 +20,7 @@ export default function TransactionForm({ onSubmit, editingTransaction, onCancel
     amount: editingTransaction?.amount || 0,
     date: editingTransaction?.date.split('T')[0] || new Date().toISOString().split('T')[0],
     description: editingTransaction?.description || '',
+    category: editingTransaction?.category || 'Other',
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -38,6 +41,10 @@ export default function TransactionForm({ onSubmit, editingTransaction, onCancel
       newErrors.description = 'Description is required';
     }
 
+    if (!formData.category) {
+      newErrors.category = 'Category is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -55,6 +62,7 @@ export default function TransactionForm({ onSubmit, editingTransaction, onCancel
           amount: 0,
           date: new Date().toISOString().split('T')[0],
           description: '',
+          category: 'Other',
         });
       }
     } catch (error) {
@@ -102,6 +110,26 @@ export default function TransactionForm({ onSubmit, editingTransaction, onCancel
               className={errors.date ? 'border-red-500' : ''}
             />
             {errors.date && <p className="text-sm text-red-500">{errors.date}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Select 
+              value={formData.category} 
+              onValueChange={(value) => handleChange('category', value)}
+            >
+              <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
           </div>
 
           <div className="space-y-2">
