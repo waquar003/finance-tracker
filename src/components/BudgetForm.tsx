@@ -33,7 +33,7 @@ export default function BudgetForm({ onSubmit, editingBudget, onCancel, usedCate
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.category) {
+    if (!editingBudget && !formData.category) {
       newErrors.category = 'Category is required';
     }
 
@@ -87,22 +87,29 @@ export default function BudgetForm({ onSubmit, editingBudget, onCancel, usedCate
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select 
-              value={formData.category} 
-              onValueChange={(value) => handleChange('category', value)}
-              disabled={!!editingBudget}
-            >
-              <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableCategories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {editingBudget ? (
+              <div className="py-2 px-3 bg-gray-100 rounded text-gray-700">
+                {formData.category}
+              </div>
+            ) : (
+              <Select 
+                value={formData.category} 
+                onValueChange={(value) => handleChange('category', value)}
+              >
+                <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select a category">
+                    {formData.category}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             {errors.category && <p className="text-sm text-red-500">{errors.category}</p>}
           </div>
 

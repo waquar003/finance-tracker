@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(budget, { status: 201 });
   } catch (error) {
-    if (error.code === 11000) {
+    const err = error as any;
+    if (err.code === 11000) {
       return NextResponse.json(
         { error: 'Budget already exists for this category' },
         { status: 409 }
