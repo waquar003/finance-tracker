@@ -1,15 +1,16 @@
 "use client";
 
-import { Transaction, CategorySummary } from '@/types/global';
+import { Transaction, CategorySummary, Budget } from '@/types/global';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, TrendingUp, CreditCard, Activity } from 'lucide-react';
+import { DollarSign, TrendingUp, CreditCard, Activity, Target, AlertTriangle } from 'lucide-react';
 
 interface DashboardProps {
   transactions: Transaction[];
+  budgets?: Budget[];
 }
 
-export default function Dashboard({ transactions }: DashboardProps) {
+export default function Dashboard({ transactions, budgets = [] }: DashboardProps) {
   const calculateStats = () => {
     const totalExpenses = transactions.reduce((sum, t) => sum + t.amount, 0);
     const totalTransactions = transactions.length;
@@ -46,7 +47,58 @@ export default function Dashboard({ transactions }: DashboardProps) {
     };
   };
 
+  const calculateBudgetPerformance = () => {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    
+    // Filter transactions for current month
+    const currentMonthTransactions = transactions.filter(t => 
+      t.date.startsWith(currentMonth)
+    );
+    
+    // Calculate current month spending by category
+    const currentMonthSpending: Record<string, number> = {};
+    currentMonthTransactions.forEach(transaction => {
+      currentMonthSpending[transaction.category] = 
+        (currentMonthSpending[transaction.category] || 0) + transaction.amount;
+    });
+
+    // Filter budgets for current month
+    const currentMonthBudgets = budgets.filter(b => b.month === currentMonth);
+    
+    // Calculate total budget
+    const totalBudget = currentMonthBudgets.reduce((sum, b) => sum + b.monthlyLimit, 0);
+    
+    // Calculate total spent (current month only)
+    const totalSpent = Object.values(currentMonthSpending).reduce((sum, val) => sum + val, 0);
+    
+    // Calculate budget utilization percentage
+    const budgetUtilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+    
+    // Count categories over budget
+    const categoriesOverBudget = currentMonthBudgets.filter(budget => {
+      const spent = currentMonthSpending[budget.category] || 0;
+      return spent > budget.monthlyLimit;
+    }).length;
+
+    // Count categories with budgets
+    const categoriesWithBudgets = currentMonthBudgets.length;
+
+    // Calculate remaining budget
+    const remainingBudget = totalBudget - totalSpent;
+
+    return {
+      totalBudget,
+      totalSpent,
+      budgetUtilization,
+      categoriesOverBudget,
+      categoriesWithBudgets,
+      remainingBudget,
+      currentMonth,
+    };
+  };
+
   const stats = calculateStats();
+  const budgetPerformance = calculateBudgetPerformance();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -59,6 +111,13 @@ export default function Dashboard({ transactions }: DashboardProps) {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric'
+    });
+  };
+
+  const formatMonth = (monthString: string) => {
+    return new Date(monthString + '-01').toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long'
     });
   };
 
@@ -76,6 +135,12 @@ export default function Dashboard({ transactions }: DashboardProps) {
       'Other': 'bg-gray-100 text-gray-800',
     };
     return colors[category] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getBudgetUtilizationColor = (percentage: number) => {
+    if (percentage <= 80) return 'text-green-600';
+    if (percentage <= 100) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   return (
@@ -134,6 +199,112 @@ export default function Dashboard({ transactions }: DashboardProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Budget Performance Cards (only show if budgets exist) */}
+      {budgets.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Monthly Budget</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(budgetPerformance.totalBudget)}
+                  </p>
+                </div>
+                <Target className="h-8 w-8 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Monthly Spent</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {formatCurrency(budgetPerformance.totalSpent)}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatMonth(budgetPerformance.currentMonth)}
+                  </p>
+                </div>
+                <DollarSign className="h-8 w-8 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Budget Used</p>
+                  <p className={`text-2xl font-bold ${getBudgetUtilizationColor(budgetPerformance.budgetUtilization)}`}>
+                    {budgetPerformance.budgetUtilization.toFixed(1)}%
+                  </p>
+                </div>
+                <TrendingUp className={`h-8 w-8 ${getBudgetUtilizationColor(budgetPerformance.budgetUtilization)}`} />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Over Budget</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {budgetPerformance.categoriesOverBudget}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    of {budgetPerformance.categoriesWithBudgets} categories
+                  </p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Budget Summary (only show if budgets exist) */}
+      {budgets.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Budget Summary - {formatMonth(budgetPerformance.currentMonth)}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm font-medium text-blue-600">Total Budget</p>
+                <p className="text-2xl font-bold text-blue-700">
+                  {formatCurrency(budgetPerformance.totalBudget)}
+                </p>
+              </div>
+              <div className="text-center p-4 bg-red-50 rounded-lg">
+                <p className="text-sm font-medium text-red-600">Total Spent</p>
+                <p className="text-2xl font-bold text-red-700">
+                  {formatCurrency(budgetPerformance.totalSpent)}
+                </p>
+              </div>
+              <div className={`text-center p-4 rounded-lg ${
+                budgetPerformance.remainingBudget >= 0 ? 'bg-green-50' : 'bg-red-50'
+              }`}>
+                <p className={`text-sm font-medium ${
+                  budgetPerformance.remainingBudget >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {budgetPerformance.remainingBudget >= 0 ? 'Remaining' : 'Over Budget'}
+                </p>
+                <p className={`text-2xl font-bold ${
+                  budgetPerformance.remainingBudget >= 0 ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {formatCurrency(Math.abs(budgetPerformance.remainingBudget))}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category Breakdown */}
